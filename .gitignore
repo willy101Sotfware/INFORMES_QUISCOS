@@ -1,0 +1,28 @@
+# Directorios y archivos generados que no deben subirse al repositorio
+
+# Informes generados en PDF
+reports/
+
+# Imágenes de evidencia subidas por los usuarios
+static/uploads/
+
+# Base de datos (si contiene datos sensibles o específicos del entorno)
+informes.db
+
+# Archivos compilados o ejecutables
+dist/
+*.exe
+
+# Archivos del entorno virtual de Python
+venv/
+env/
+.venv/
+.env/
+
+# Archivos de respaldo de la base de datos
+*.bak
+*.backup
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db

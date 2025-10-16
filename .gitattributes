@@ -1,0 +1,21 @@
+# Especifica atributos para archivos en el repositorio
+
+# Archivos binarios que no deben mostrarse en diffs
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+
+# Archivos de texto con codificación específica
+*.py text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+
+# Evitar que ciertos archivos se incluyan en el archivo de exportación
+.gitignore export-ignore
+.gitattributes export-ignore
+reports/** export-ignore
+static/uploads/** export-ignore
