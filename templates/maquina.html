@@ -47,6 +47,11 @@
                     Registrado: {{ informe.creado_en.strftime('%d/%m/%Y %I:%M %p') }}
                 </small>
             </div>
+            <div class="card-footer">
+                <a href="{{ url_for('editar_informe', id=informe.id) }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-edit me-1"></i> Editar
+                </a>
+            </div>
         </div>
     </div>
     {% endfor %}

@@ -192,6 +192,50 @@ def get_informes_por_fechas(fecha_inicio, fecha_fin):
     conn.close()
     return informes
 
+# Obtener un informe por su ID
+def get_informe_by_id(id):
+    conn = sqlite3.connect(app.config['DATABASE'])
+    c = conn.cursor()
+    c.execute("""SELECT id, nombre_maquina, fecha, hora, descripcion, imagen, creado_en 
+                 FROM informes 
+                 WHERE id = ?""", (id,))
+    row = c.fetchone()
+    if row:
+        informe = {
+            'id': row[0],
+            'nombre_maquina': row[1],
+            'fecha': datetime.strptime(row[2], '%Y-%m-%d').date(),
+            'hora': parse_hora(row[3]),
+            'descripcion': row[4],
+            'imagen': row[5],
+            'creado_en': datetime.strptime(row[6], '%Y-%m-%d %H:%M:%S')
+        }
+        conn.close()
+        return informe
+    conn.close()
+    return None
+
+# Actualizar un informe existente
+def update_informe(id, nombre_maquina, fecha, hora, descripcion, imagen=None):
+    conn = sqlite3.connect(app.config['DATABASE'])
+    c = conn.cursor()
+    
+    if imagen is not None:
+        # Si se proporciona una nueva imagen, actualizar todos los campos incluyendo la imagen
+        c.execute("""UPDATE informes 
+                     SET nombre_maquina = ?, fecha = ?, hora = ?, descripcion = ?, imagen = ?
+                     WHERE id = ?""", 
+                  (nombre_maquina, fecha, hora, descripcion, imagen, id))
+    else:
+        # Si no se proporciona una nueva imagen, actualizar solo los otros campos
+        c.execute("""UPDATE informes 
+                     SET nombre_maquina = ?, fecha = ?, hora = ?, descripcion = ?
+                     WHERE id = ?""", 
+                  (nombre_maquina, fecha, hora, descripcion, id))
+    
+    conn.commit()
+    conn.close()
+
 # Agregar un informe
 def add_informe(nombre_maquina, fecha, hora, descripcion, imagen):
     conn = sqlite3.connect(app.config['DATABASE'])
@@ -544,6 +588,63 @@ def eliminar_maquina(nombre_maquina):
     delete_maquina(nombre_maquina)
     flash('Máquina eliminada correctamente')
     return redirect(url_for('index'))
+
+# Ruta para mostrar el formulario de edición de informe
+@app.route('/editar_informe/<int:id>', methods=['GET'])
+def editar_informe(id):
+    informe = get_informe_by_id(id)
+    if informe is None:
+        flash('Informe no encontrado')
+        return redirect(url_for('index'))
+    
+    maquinas = get_maquinas()
+    return render_template('editar_informe.html', informe=informe, maquinas=maquinas, datetime=datetime)
+
+# Ruta para procesar la actualización de informe
+@app.route('/editar_informe/<int:id>', methods=['POST'])
+def actualizar_informe(id):
+    informe = get_informe_by_id(id)
+    if informe is None:
+        flash('Informe no encontrado')
+        return redirect(url_for('index'))
+    
+    nombre_maquina = request.form['nombre_maquina']
+    fecha = request.form['fecha']
+    hora = request.form['hora']
+    descripcion = request.form['descripcion']
+    
+    if nombre_maquina and fecha and hora and descripcion:
+        # Verificar si se ha subido una nueva imagen
+        imagen_nombre = informe['imagen']  # Mantener la imagen existente por defecto
+        
+        if 'imagen' in request.files:
+            imagen = request.files['imagen']
+            if imagen.filename != '':
+                # Eliminar la imagen anterior si existe
+                if informe['imagen']:
+                    imagen_anterior_path = os.path.join(app.config['UPLOAD_FOLDER'], informe['imagen'])
+                    if os.path.exists(imagen_anterior_path):
+                        os.remove(imagen_anterior_path)
+                
+                # Guardar la nueva imagen
+                extension = imagen.filename.rsplit('.', 1)[1].lower() if imagen.filename else ''
+                imagen_nombre = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{nombre_maquina}.{extension}"
+                imagen.save(os.path.join(app.config['UPLOAD_FOLDER'], imagen_nombre))
+            elif informe['imagen']:
+                # Si no se sube una nueva imagen pero había una anterior, mantener la anterior
+                imagen_nombre = informe['imagen']
+            else:
+                # Si no hay imagen nueva ni anterior, establecer como None
+                imagen_nombre = None
+        
+        # Actualizar el informe
+        update_informe(id, nombre_maquina, fecha, hora, descripcion, imagen_nombre)
+        flash('Informe actualizado correctamente')
+        return redirect(url_for('ver_maquina', nombre_maquina=nombre_maquina))
+    else:
+        flash('Por favor complete todos los campos obligatorios')
+        maquinas = get_maquinas()
+        return render_template('editar_informe.html', informe=informe, maquinas=maquinas, datetime=datetime)
 
 def crear_tablas_iniciales():
     """Crear tablas iniciales si no existen"""

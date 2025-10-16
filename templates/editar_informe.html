@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Informe{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2><i class="fas fa-edit me-2"></i>Editar Informe de Máquina</h2>
+        <hr>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Detalles del Informe</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" class="row g-3">
+                    <div class="col-12">
+                        <label for="nombre_maquina" class="form-label"><i class="fas fa-cog me-1"></i> Nombre de la Máquina</label>
+                        <select class="form-select" id="nombre_maquina" name="nombre_maquina" required>
+                            <option value="">Seleccione una máquina</option>
+                            {% for maquina in maquinas %}
+                            <option value="{{ maquina.nombre }}" {% if maquina.nombre == informe.nombre_maquina %}selected{% endif %}>
+                                {{ maquina.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="fecha" class="form-label"><i class="fas fa-calendar me-1"></i> Fecha</label>
+                        <input type="date" class="form-control" id="fecha" name="fecha" 
+                               value="{{ informe.fecha.strftime('%Y-%m-%d') }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="hora" class="form-label"><i class="fas fa-clock me-1"></i> Hora</label>
+                        <input type="time" class="form-control" id="hora" name="hora" 
+                               value="{{ informe.hora.strftime('%H:%M') }}" required>
+                    </div>
+                    <div class="col-12">
+                        <label for="descripcion" class="form-label"><i class="fas fa-align-left me-1"></i> Descripción de la Novedad</label>
+                        <textarea class="form-control" id="descripcion" name="descripcion" rows="4" 
+                                  placeholder="Describa detalladamente la novedad encontrada en la máquina..." required>{{ informe.descripcion }}</textarea>
+                    </div>
+                    <div class="col-12">
+                        <label for="imagen" class="form-label"><i class="fas fa-image me-1"></i> Imagen de Evidencia (Opcional)</label>
+                        <input type="file" class="form-control" id="imagen" name="imagen" accept="image/*">
+                        <div class="form-text">Formatos permitidos: JPG, PNG, GIF. Tamaño máximo: 5MB.</div>
+                        
+                        {% if informe.imagen %}
+                        <div class="mt-2">
+                            <label class="form-label">Imagen actual:</label>
+                            <div class="text-center">
+                                <img src="{{ url_for('static', filename='uploads/' + informe.imagen) }}" 
+                                     alt="Evidencia actual" class="report-image img-fluid">
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-1"></i> Actualizar Informe
+                            </button>
+                            <a href="{{ url_for('ver_maquina', nombre_maquina=informe.nombre_maquina) }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i> Cancelar
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
