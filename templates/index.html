@@ -56,6 +56,9 @@
             <a href="{{ url_for('generar_informe_pdf') }}" class="btn btn-primary" target="_blank">
                 <i class="fas fa-file-pdf me-1"></i> Generar Informe PDF General
             </a>
+            <button type="button" class="btn btn-danger" onclick="confirmarReseteo()">
+                <i class="fas fa-broom me-1"></i> Resetear Todos los Informes
+            </button>
         </div>
     </div>
 </div>
@@ -93,6 +96,10 @@
     </div>
 </div>
 
+<!-- Formulario oculto para resetear informes -->
+<form id="formReseteo" method="POST" action="{{ url_for('resetear_informes') }}" style="display: none;">
+</form>
+
 <script>
 // Establecer fechas por defecto
 document.addEventListener('DOMContentLoaded', function() {
@@ -103,5 +110,28 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('fecha_inicio').valueAsDate = primerDia;
     document.getElementById('fecha_fin').valueAsDate = ultimoDia;
 });
+
+// Función para confirmar reseteo de informes
+function confirmarReseteo() {
+    const confirmacion = confirm(
+        '⚠️ ADVERTENCIA: Esta acción eliminará TODOS los informes y sus imágenes.\n\n' +
+        '✓ Las máquinas se mantendrán\n' +
+        '✗ Todos los informes serán eliminados\n' +
+        '✗ Todas las imágenes serán eliminadas\n\n' +
+        '¿Está seguro que desea continuar?'
+    );
+    
+    if (confirmacion) {
+        const segundaConfirmacion = confirm(
+            '🔴 ÚLTIMA CONFIRMACIÓN\n\n' +
+            'Esta acción NO se puede deshacer.\n\n' +
+            '¿Realmente desea eliminar todos los informes?'
+        );
+        
+        if (segundaConfirmacion) {
+            document.getElementById('formReseteo').submit();
+        }
+    }
+}
 </script>
 {% endblock %}

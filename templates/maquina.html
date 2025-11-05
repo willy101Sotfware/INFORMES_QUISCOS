@@ -35,10 +35,20 @@
                 </h5>
                 <p class="card-text">{{ informe.descripcion }}</p>
                 
-                {% if informe.imagen %}
-                <div class="text-center mb-3">
-                    <img src="{{ url_for('static', filename='uploads/' + informe.imagen) }}" 
-                         alt="Evidencia" class="report-image img-fluid">
+                {% if informe.imagen or informe.imagen2 %}
+                <div class="row mb-3">
+                    {% if informe.imagen %}
+                    <div class="col-md-6 text-center">
+                        <img src="{{ url_for('static', filename='uploads/' + informe.imagen) }}" 
+                             alt="Evidencia 1" class="report-image img-fluid" style="max-height: 300px; object-fit: contain;">
+                    </div>
+                    {% endif %}
+                    {% if informe.imagen2 %}
+                    <div class="col-md-6 text-center">
+                        <img src="{{ url_for('static', filename='uploads/' + informe.imagen2) }}" 
+                             alt="Evidencia 2" class="report-image img-fluid" style="max-height: 300px; object-fit: contain;">
+                    </div>
+                    {% endif %}
                 </div>
                 {% endif %}
                 

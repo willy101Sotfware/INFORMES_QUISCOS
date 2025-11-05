@@ -9,10 +9,13 @@ Sistema de gestión de informes para máquinas con registro de novedades, fechas
   - Nombre de la máquina
   - Fecha y hora de la novedad
   - Descripción detallada de la novedad
-  - Imágenes de evidencia (todas se muestran con el mismo tamaño)
+  - **Hasta 2 imágenes de evidencia** (todas se muestran con el mismo tamaño)
+- **Ordenamiento automático** de informes por máquina y fecha (ascendente)
 - Generación de informe consolidado en PDF con diseño profesional
+- **Reseteo quincenal**: Botón para limpiar todos los informes manteniendo las máquinas
 - Interfaz limpia y organizada tipo dashboard
 - Vista de informes por máquina ordenados cronológicamente
+- Edición de informes existentes con actualización de imágenes
 
 ## Requisitos
 
@@ -67,17 +70,26 @@ python instalar_app.py
 
 ## Uso
 
-1. Agregar nuevas máquinas desde la página principal
-2. Para cada máquina, crear informes con:
+1. **Agregar nuevas máquinas** desde la página principal
+2. **Crear informes** para cada máquina con:
    - Nombre de la máquina (seleccionado de la lista)
    - Fecha (se establece automáticamente al día actual)
    - Hora (se establece automáticamente a la hora actual)
    - Descripción detallada de la novedad
-   - Imagen de evidencia (opcional)
-3. Visualizar todos los informes organizados por máquina
-4. Generar informe consolidado en PDF:
-   - Hacer clic en el botón "Generar Informe PDF" en la página principal
-   - El informe se descargará automáticamente con todos los registros
+   - **Imagen de evidencia 1** (opcional)
+   - **Imagen de evidencia 2** (opcional)
+3. **Visualizar informes** organizados por máquina y fecha (orden ascendente)
+4. **Editar informes** existentes y actualizar imágenes
+5. **Generar informe PDF**:
+   - Hacer clic en "Generar Informe PDF" en la página principal
+   - El PDF incluye todas las máquinas ordenadas alfabéticamente
+   - Los informes dentro de cada máquina están ordenados por fecha ascendente
+   - Ambas imágenes se incluyen con el mismo tamaño
+6. **Resetear informes cada 15 días**:
+   - Hacer clic en "Resetear Todos los Informes" (botón rojo)
+   - Confirmar dos veces la acción
+   - Se eliminan todos los informes e imágenes
+   - Las máquinas se mantienen para el siguiente período
 
 ## Estructura del Proyecto
 

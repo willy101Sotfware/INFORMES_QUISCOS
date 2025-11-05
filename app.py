@@ -50,8 +50,19 @@ def init_db():
                       hora TIME NOT NULL,
                       descripcion TEXT NOT NULL,
                       imagen TEXT,
+                      imagen2 TEXT,
                       creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                       FOREIGN KEY (nombre_maquina) REFERENCES maquinas (nombre))''')
+        
+        # Migración: Agregar columna imagen2 si no existe (para bases de datos existentes)
+        try:
+            c.execute("PRAGMA table_info(informes)")
+            columns = [column[1] for column in c.fetchall()]
+            if 'imagen2' not in columns:
+                c.execute("ALTER TABLE informes ADD COLUMN imagen2 TEXT")
+                print("Columna imagen2 agregada a la base de datos existente")
+        except sqlite3.OperationalError:
+            pass  # La columna ya existe o hay otro error
         
         conn.commit()
         conn.close()
@@ -131,7 +142,7 @@ def delete_maquina(nombre):
 def get_informes_por_maquina(nombre_maquina):
     conn = sqlite3.connect(app.config['DATABASE'])
     c = conn.cursor()
-    c.execute("""SELECT id, nombre_maquina, fecha, hora, descripcion, imagen, creado_en 
+    c.execute("""SELECT id, nombre_maquina, fecha, hora, descripcion, imagen, imagen2, creado_en 
                  FROM informes 
                  WHERE nombre_maquina = ? 
                  ORDER BY fecha DESC, hora DESC""", (nombre_maquina,))
@@ -144,7 +155,8 @@ def get_informes_por_maquina(nombre_maquina):
             'hora': parse_hora(row[3]),
             'descripcion': row[4],
             'imagen': row[5],
-            'creado_en': datetime.strptime(row[6], '%Y-%m-%d %H:%M:%S')
+            'imagen2': row[6],
+            'creado_en': datetime.strptime(row[7], '%Y-%m-%d %H:%M:%S')
         })
     conn.close()
     return informes
@@ -153,7 +165,7 @@ def get_informes_por_maquina(nombre_maquina):
 def get_all_informes():
     conn = sqlite3.connect(app.config['DATABASE'])
     c = conn.cursor()
-    c.execute("""SELECT id, nombre_maquina, fecha, hora, descripcion, imagen, creado_en 
+    c.execute("""SELECT id, nombre_maquina, fecha, hora, descripcion, imagen, imagen2, creado_en 
                  FROM informes 
                  ORDER BY nombre_maquina, fecha, hora""")
     informes = []
@@ -165,7 +177,8 @@ def get_all_informes():
             'hora': parse_hora(row[3]),
             'descripcion': row[4],
             'imagen': row[5],
-            'creado_en': datetime.strptime(row[6], '%Y-%m-%d %H:%M:%S')
+            'imagen2': row[6],
+            'creado_en': datetime.strptime(row[7], '%Y-%m-%d %H:%M:%S')
         })
     conn.close()
     return informes
@@ -174,7 +187,7 @@ def get_all_informes():
 def get_informes_por_fechas(fecha_inicio, fecha_fin):
     conn = sqlite3.connect(app.config['DATABASE'])
     c = conn.cursor()
-    c.execute("""SELECT id, nombre_maquina, fecha, hora, descripcion, imagen, creado_en 
+    c.execute("""SELECT id, nombre_maquina, fecha, hora, descripcion, imagen, imagen2, creado_en 
                  FROM informes 
                  WHERE fecha BETWEEN ? AND ?
                  ORDER BY nombre_maquina, fecha, hora""", (fecha_inicio, fecha_fin))
@@ -187,7 +200,8 @@ def get_informes_por_fechas(fecha_inicio, fecha_fin):
             'hora': parse_hora(row[3]),
             'descripcion': row[4],
             'imagen': row[5],
-            'creado_en': datetime.strptime(row[6], '%Y-%m-%d %H:%M:%S')
+            'imagen2': row[6],
+            'creado_en': datetime.strptime(row[7], '%Y-%m-%d %H:%M:%S')
         })
     conn.close()
     return informes
@@ -196,7 +210,7 @@ def get_informes_por_fechas(fecha_inicio, fecha_fin):
 def get_informe_by_id(id):
     conn = sqlite3.connect(app.config['DATABASE'])
     c = conn.cursor()
-    c.execute("""SELECT id, nombre_maquina, fecha, hora, descripcion, imagen, creado_en 
+    c.execute("""SELECT id, nombre_maquina, fecha, hora, descripcion, imagen, imagen2, creado_en 
                  FROM informes 
                  WHERE id = ?""", (id,))
     row = c.fetchone()
@@ -208,7 +222,8 @@ def get_informe_by_id(id):
             'hora': parse_hora(row[3]),
             'descripcion': row[4],
             'imagen': row[5],
-            'creado_en': datetime.strptime(row[6], '%Y-%m-%d %H:%M:%S')
+            'imagen2': row[6],
+            'creado_en': datetime.strptime(row[7], '%Y-%m-%d %H:%M:%S')
         }
         conn.close()
         return informe
@@ -216,18 +231,30 @@ def get_informe_by_id(id):
     return None
 
 # Actualizar un informe existente
-def update_informe(id, nombre_maquina, fecha, hora, descripcion, imagen=None):
+def update_informe(id, nombre_maquina, fecha, hora, descripcion, imagen=None, imagen2=None):
     conn = sqlite3.connect(app.config['DATABASE'])
     c = conn.cursor()
     
-    if imagen is not None:
+    if imagen is not None and imagen2 is not None:
+        # Si se proporcionan nuevas imágenes, actualizar todos los campos incluyendo las imágenes
+        c.execute("""UPDATE informes 
+                     SET nombre_maquina = ?, fecha = ?, hora = ?, descripcion = ?, imagen = ?, imagen2 = ?
+                     WHERE id = ?""", 
+                  (nombre_maquina, fecha, hora, descripcion, imagen, imagen2, id))
+    elif imagen is not None:
         # Si se proporciona una nueva imagen, actualizar todos los campos incluyendo la imagen
         c.execute("""UPDATE informes 
                      SET nombre_maquina = ?, fecha = ?, hora = ?, descripcion = ?, imagen = ?
                      WHERE id = ?""", 
                   (nombre_maquina, fecha, hora, descripcion, imagen, id))
+    elif imagen2 is not None:
+        # Si se proporciona una nueva imagen2, actualizar todos los campos incluyendo la imagen2
+        c.execute("""UPDATE informes 
+                     SET nombre_maquina = ?, fecha = ?, hora = ?, descripcion = ?, imagen2 = ?
+                     WHERE id = ?""", 
+                  (nombre_maquina, fecha, hora, descripcion, imagen2, id))
     else:
-        # Si no se proporciona una nueva imagen, actualizar solo los otros campos
+        # Si no se proporcionan nuevas imágenes, actualizar solo los otros campos
         c.execute("""UPDATE informes 
                      SET nombre_maquina = ?, fecha = ?, hora = ?, descripcion = ?
                      WHERE id = ?""", 
@@ -237,16 +264,58 @@ def update_informe(id, nombre_maquina, fecha, hora, descripcion, imagen=None):
     conn.close()
 
 # Agregar un informe
-def add_informe(nombre_maquina, fecha, hora, descripcion, imagen):
+def add_informe(nombre_maquina, fecha, hora, descripcion, imagen, imagen2):
     conn = sqlite3.connect(app.config['DATABASE'])
     c = conn.cursor()
-    c.execute("""INSERT INTO informes (nombre_maquina, fecha, hora, descripcion, imagen)
-                 VALUES (?, ?, ?, ?, ?)""", 
-              (nombre_maquina, fecha, hora, descripcion, imagen))
+    c.execute("""INSERT INTO informes (nombre_maquina, fecha, hora, descripcion, imagen, imagen2)
+                 VALUES (?, ?, ?, ?, ?, ?)""", 
+              (nombre_maquina, fecha, hora, descripcion, imagen, imagen2))
     conn.commit()
     informe_id = c.lastrowid
     conn.close()
     return informe_id
+
+# Eliminar todos los informes y sus imágenes (mantiene las máquinas)
+def delete_all_informes():
+    """Elimina todos los informes de la base de datos y sus archivos de imagen"""
+    try:
+        conn = sqlite3.connect(app.config['DATABASE'])
+        c = conn.cursor()
+        
+        # Obtener todas las imágenes antes de eliminar los registros
+        c.execute("SELECT imagen, imagen2 FROM informes")
+        imagenes = c.fetchall()
+        
+        # Eliminar archivos de imágenes del sistema de archivos
+        for row in imagenes:
+            if row[0]:  # imagen
+                imagen_path = os.path.join(app.config['UPLOAD_FOLDER'], row[0])
+                if os.path.exists(imagen_path):
+                    try:
+                        os.remove(imagen_path)
+                    except Exception as e:
+                        print(f"Error eliminando imagen {row[0]}: {e}")
+            
+            if row[1]:  # imagen2
+                imagen2_path = os.path.join(app.config['UPLOAD_FOLDER'], row[1])
+                if os.path.exists(imagen2_path):
+                    try:
+                        os.remove(imagen2_path)
+                    except Exception as e:
+                        print(f"Error eliminando imagen2 {row[1]}: {e}")
+        
+        # Eliminar todos los registros de informes
+        c.execute("DELETE FROM informes")
+        conn.commit()
+        
+        # Obtener el número de registros eliminados
+        registros_eliminados = c.rowcount
+        conn.close()
+        
+        return True, registros_eliminados
+    except Exception as e:
+        print(f"Error eliminando informes: {e}")
+        return False, 0
 
 @app.route('/')
 def index():
@@ -285,6 +354,7 @@ def nuevo_informe():
         if nombre_maquina and fecha and hora and descripcion:
             # Guardar imagen si se proporciona
             imagen_nombre = None
+            imagen2_nombre = None
             if 'imagen' in request.files:
                 imagen = request.files['imagen']
                 if imagen.filename != '':
@@ -293,8 +363,16 @@ def nuevo_informe():
                     imagen_nombre = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{nombre_maquina}.{extension}"
                     imagen.save(os.path.join(app.config['UPLOAD_FOLDER'], imagen_nombre))
             
+            if 'imagen2' in request.files:
+                imagen2 = request.files['imagen2']
+                if imagen2.filename != '':
+                    # Generar nombre único para la imagen2
+                    extension = imagen2.filename.rsplit('.', 1)[1].lower() if imagen2.filename else ''
+                    imagen2_nombre = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{nombre_maquina}_2.{extension}"
+                    imagen2.save(os.path.join(app.config['UPLOAD_FOLDER'], imagen2_nombre))
+            
             # Crear el informe
-            add_informe(nombre_maquina, fecha, hora, descripcion, imagen_nombre)
+            add_informe(nombre_maquina, fecha, hora, descripcion, imagen_nombre, imagen2_nombre)
             flash('Informe agregado correctamente')
             return redirect(url_for('ver_maquina', nombre_maquina=nombre_maquina))
         else:
@@ -409,6 +487,23 @@ def generar_informe_pdf():
             # Agregar imagen si existe (centrada y con espacio)
             if informe['imagen']:
                 image_path = os.path.join(app.config['UPLOAD_FOLDER'], informe['imagen'])
+                if os.path.exists(image_path):
+                    try:
+                        # Verificar espacio suficiente
+                        if pdf.get_y() + 50 > pdf.h - pdf.b_margin:
+                            pdf.add_page()
+                            pdf.ln(5)
+                        
+                        # Centrar la imagen
+                        pdf.cell(0, 10, '', 0, 1, 'C')
+                        pdf.image(image_path, w=45, h=45)
+                        pdf.ln(5)
+                    except Exception as e:
+                        pass  # Si hay error con la imagen, continuar sin mostrarla
+            
+            # Agregar imagen2 si existe (centrada y con espacio)
+            if informe['imagen2']:
+                image_path = os.path.join(app.config['UPLOAD_FOLDER'], informe['imagen2'])
                 if os.path.exists(image_path):
                     try:
                         # Verificar espacio suficiente
@@ -562,6 +657,23 @@ def generar_informe_personalizado():
                     except Exception as e:
                         pass  # Si hay error con la imagen, continuar sin mostrarla
             
+            # Agregar imagen2 si existe (centrada y con espacio)
+            if informe['imagen2']:
+                image_path = os.path.join(app.config['UPLOAD_FOLDER'], informe['imagen2'])
+                if os.path.exists(image_path):
+                    try:
+                        # Verificar espacio suficiente
+                        if pdf.get_y() + 50 > pdf.h - pdf.b_margin:
+                            pdf.add_page()
+                            pdf.ln(5)
+                        
+                        # Centrar la imagen
+                        pdf.cell(0, 10, '', 0, 1, 'C')
+                        pdf.image(image_path, w=45, h=45)
+                        pdf.ln(5)
+                    except Exception as e:
+                        pass  # Si hay error con la imagen, continuar sin mostrarla
+            
             # Línea divisoria sutil entre informes
             pdf.set_draw_color(200, 200, 200)
             pdf.line(15, pdf.get_y(), 195, pdf.get_y())
@@ -587,6 +699,16 @@ def generar_informe_personalizado():
 def eliminar_maquina(nombre_maquina):
     delete_maquina(nombre_maquina)
     flash('Máquina eliminada correctamente')
+    return redirect(url_for('index'))
+
+# Ruta para resetear todos los informes (mantiene las máquinas)
+@app.route('/resetear_informes', methods=['POST'])
+def resetear_informes():
+    exito, cantidad = delete_all_informes()
+    if exito:
+        flash(f'✓ Se eliminaron {cantidad} informes y todas sus imágenes correctamente. Las máquinas se mantuvieron.', 'success')
+    else:
+        flash('✗ Hubo un error al eliminar los informes', 'error')
     return redirect(url_for('index'))
 
 # Ruta para mostrar el formulario de edición de informe
@@ -616,6 +738,7 @@ def actualizar_informe(id):
     if nombre_maquina and fecha and hora and descripcion:
         # Verificar si se ha subido una nueva imagen
         imagen_nombre = informe['imagen']  # Mantener la imagen existente por defecto
+        imagen2_nombre = informe['imagen2']  # Mantener la imagen2 existente por defecto
         
         if 'imagen' in request.files:
             imagen = request.files['imagen']
@@ -637,8 +760,28 @@ def actualizar_informe(id):
                 # Si no hay imagen nueva ni anterior, establecer como None
                 imagen_nombre = None
         
+        if 'imagen2' in request.files:
+            imagen2 = request.files['imagen2']
+            if imagen2.filename != '':
+                # Eliminar la imagen2 anterior si existe
+                if informe['imagen2']:
+                    imagen2_anterior_path = os.path.join(app.config['UPLOAD_FOLDER'], informe['imagen2'])
+                    if os.path.exists(imagen2_anterior_path):
+                        os.remove(imagen2_anterior_path)
+                
+                # Guardar la nueva imagen2
+                extension = imagen2.filename.rsplit('.', 1)[1].lower() if imagen2.filename else ''
+                imagen2_nombre = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{nombre_maquina}_2.{extension}"
+                imagen2.save(os.path.join(app.config['UPLOAD_FOLDER'], imagen2_nombre))
+            elif informe['imagen2']:
+                # Si no se sube una nueva imagen2 pero había una anterior, mantener la anterior
+                imagen2_nombre = informe['imagen2']
+            else:
+                # Si no hay imagen2 nueva ni anterior, establecer como None
+                imagen2_nombre = None
+        
         # Actualizar el informe
-        update_informe(id, nombre_maquina, fecha, hora, descripcion, imagen_nombre)
+        update_informe(id, nombre_maquina, fecha, hora, descripcion, imagen_nombre, imagen2_nombre)
         flash('Informe actualizado correctamente')
         return redirect(url_for('ver_maquina', nombre_maquina=nombre_maquina))
     else:
@@ -665,6 +808,7 @@ def crear_tablas_iniciales():
                       hora TIME NOT NULL,
                       descripcion TEXT NOT NULL,
                       imagen TEXT,
+                      imagen2 TEXT,
                       creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                       FOREIGN KEY (nombre_maquina) REFERENCES maquinas (nombre))''')
         
