@@ -60,3 +60,6 @@
 - **Elementos visuales** que mejoran la comprensión del contenido
 
 Este diseño profesional elevará significativamente la percepción del informe por parte de tu jefe, dándole una apariencia de documento corporativo de alta calidad.
+
+
+.venv\Scripts\activate
